@@ -1,0 +1,5 @@
+{
+  "mcpServers": {
+    "perch": { "command": "perch-mcp" }
+  }
+}

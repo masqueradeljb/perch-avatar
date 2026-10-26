@@ -1,0 +1,10 @@
+{
+  "name": "perch",
+  "version": "0.1.0",
+  "description": "Perch mascot reacts to Claude Code: thinking, per-tool actions, done, waiting for you. Needs Perch.app and `npm i -g perch-avatar`.",
+  "author": { "name": "Jingbang Liu" },
+  "homepage": "https://github.com/masqueradeljb/perch-avatar",
+  "repository": "https://github.com/masqueradeljb/perch-avatar",
+  "license": "MIT",
+  "keywords": ["mascot", "desktop-pet", "macos", "mcp"]
+}

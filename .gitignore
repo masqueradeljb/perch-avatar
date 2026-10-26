@@ -1,0 +1,7 @@
+app/.build/
+app/.swiftpm/
+cli/node_modules/
+cli/dist/
+cli/dist-test/
+build/
+.DS_Store

@@ -1,0 +1,307 @@
+{
+  "poses": {
+    "lie_edge": {
+      "anchor": "edge_top",
+      "image": "poses/lie_edge.png",
+      "facing": "right",
+      "contact": {
+        "x": [
+          0.0148,
+          0.921
+        ],
+        "y": [
+          0.4881,
+          0.4881
+        ]
+      },
+      "faces": {
+        "happy": "poses/lie_edge.happy.png",
+        "shock": "poses/lie_edge.shock.png",
+        "sad": "poses/lie_edge.sad.png",
+        "blink": "poses/lie_edge.blink.png"
+      }
+    },
+    "sit_corner": {
+      "anchor": "corner",
+      "image": "poses/sit_corner.png",
+      "facing": "right",
+      "contact": {
+        "x": [
+          0.1801,
+          0.8649
+        ],
+        "y": [
+          0.4758,
+          0.4758
+        ]
+      },
+      "faces": {
+        "happy": "poses/sit_corner.happy.png",
+        "shock": "poses/sit_corner.shock.png",
+        "sad": "poses/sit_corner.sad.png",
+        "blink": "poses/sit_corner.blink.png"
+      }
+    },
+    "point": {
+      "anchor": "floor",
+      "image": "poses/point.png",
+      "facing": "right",
+      "contact": {
+        "x": [
+          0.2879,
+          0.846
+        ],
+        "y": [
+          0.9667,
+          0.9667
+        ]
+      },
+      "hotspot": {
+        "tip": [
+          0.9875,
+          0.1611
+        ]
+      }
+    },
+    "peek_side": {
+      "anchor": "edge_side",
+      "image": "poses/peek_side.png",
+      "facing": "right",
+      "contact": {
+        "x": [
+          0.9456,
+          0.9456
+        ],
+        "y": [
+          0.2404,
+          0.9819
+        ]
+      }
+    },
+    "stand": {
+      "anchor": "floor",
+      "image": "poses/stand.png",
+      "facing": "right",
+      "contact": {
+        "x": [
+          0.3333,
+          0.9016
+        ],
+        "y": [
+          0.9596,
+          0.9596
+        ]
+      },
+      "faces": {
+        "happy": "poses/stand.happy.png",
+        "shock": "poses/stand.shock.png",
+        "sad": "poses/stand.sad.png",
+        "blink": "poses/stand.blink.png"
+      }
+    },
+    "think": {
+      "anchor": "floor",
+      "image": "poses/think.png",
+      "facing": "right",
+      "contact": {
+        "x": [
+          0.3032,
+          0.8693
+        ],
+        "y": [
+          0.9685,
+          0.9685
+        ]
+      },
+      "faces": {
+        "happy": "poses/think.happy.png",
+        "shock": "poses/think.shock.png",
+        "sad": "poses/think.sad.png",
+        "blink": "poses/think.blink.png"
+      }
+    },
+    "work": {
+      "anchor": "floor",
+      "image": "poses/work.png",
+      "facing": "right",
+      "contact": {
+        "x": [
+          0.3375,
+          0.7781
+        ],
+        "y": [
+          0.9722,
+          0.9722
+        ]
+      }
+    },
+    "run": {
+      "anchor": "free",
+      "image": "poses/run.png",
+      "facing": "right"
+    },
+    "celebrate": {
+      "anchor": "floor",
+      "image": "poses/celebrate.png",
+      "facing": "right",
+      "contact": {
+        "x": [
+          0.7164,
+          0.8288
+        ],
+        "y": [
+          0.9702,
+          0.9702
+        ]
+      }
+    },
+    "shock": {
+      "anchor": "floor",
+      "image": "poses/shock.png",
+      "facing": "right",
+      "contact": {
+        "x": [
+          0.4712,
+          0.8672
+        ],
+        "y": [
+          0.9775,
+          0.9775
+        ]
+      }
+    },
+    "sleep": {
+      "anchor": "edge_top",
+      "image": "poses/sleep.png",
+      "facing": "right",
+      "contact": {
+        "x": [
+          0.0178,
+          0.9231
+        ],
+        "y": [
+          0.5402,
+          0.5402
+        ]
+      }
+    },
+    "wave": {
+      "anchor": "floor",
+      "image": "poses/wave.png",
+      "facing": "right",
+      "contact": {
+        "x": [
+          0.3379,
+          0.867
+        ],
+        "y": [
+          0.9574,
+          0.9574
+        ]
+      }
+    }
+  },
+  "extras": {
+    "lie_low": {
+      "anchor": "edge_top",
+      "image": "poses/lie_low.png",
+      "facing": "right",
+      "contact": {
+        "x": [
+          0.0098,
+          0.987
+        ],
+        "y": [
+          0.4026,
+          0.4026
+        ]
+      }
+    },
+    "type": {
+      "anchor": "floor",
+      "image": "poses/type.png",
+      "facing": "right",
+      "contact": {
+        "x": [
+          0.3288,
+          0.9225
+        ],
+        "y": [
+          0.9615,
+          0.9615
+        ]
+      },
+      "frames": [
+        "poses/type.png",
+        "poses/type.f2.png"
+      ],
+      "fps": 5
+    },
+    "read": {
+      "anchor": "floor",
+      "image": "poses/read.png",
+      "facing": "right",
+      "contact": {
+        "x": [
+          0.2851,
+          0.9121
+        ],
+        "y": [
+          0.9813,
+          0.9813
+        ]
+      },
+      "frames": [
+        "poses/read.png",
+        "poses/read.f2.png"
+      ],
+      "fps": 2
+    },
+    "search": {
+      "anchor": "floor",
+      "image": "poses/search.png",
+      "facing": "right",
+      "contact": {
+        "x": [
+          0.355,
+          0.7979
+        ],
+        "y": [
+          0.9595,
+          0.9595
+        ]
+      },
+      "frames": [
+        "poses/search.png",
+        "poses/search.f2.png"
+      ],
+      "fps": 3
+    },
+    "tail_swipe": {
+      "anchor": "floor",
+      "image": "poses/tail_swipe.png",
+      "facing": "right",
+      "contact": {
+        "x": [
+          0.5818,
+          0.9176
+        ],
+        "y": [
+          0.9567,
+          0.9567
+        ]
+      },
+      "frames": [
+        "poses/tail_swipe.png",
+        "poses/tail_swipe.f2.png"
+      ],
+      "fps": 4
+    }
+  },
+  "spec": 1,
+  "id": "kuro",
+  "name": "Kuro",
+  "kind": "animal",
+  "version": "0.1.0",
+  "license": "CC-BY-4.0"
+}

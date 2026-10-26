@@ -1,0 +1,15 @@
+{
+  "name": "perch-avatar",
+  "owner": { "name": "Jingbang Liu" },
+  "metadata": { "description": "Perch: a desktop pet that perches on whatever window your agent is working in." },
+  "plugins": [
+    {
+      "name": "perch",
+      "source": "./plugins/perch",
+      "description": "Perch mascot reacts to Claude Code (thinking, per-tool actions, done, waiting for you) and gets MCP tools to point at text and talk.",
+      "version": "0.1.0",
+      "license": "MIT",
+      "homepage": "https://github.com/masqueradeljb/perch-avatar"
+    }
+  ]
+}

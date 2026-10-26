@@ -1,0 +1,9 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "command -v perch >/dev/null 2>&1 && perch hook || true" }] }],
+    "PreToolUse":       [{ "hooks": [{ "type": "command", "command": "command -v perch >/dev/null 2>&1 && perch hook || true" }] }],
+    "Notification":     [{ "hooks": [{ "type": "command", "command": "command -v perch >/dev/null 2>&1 && perch hook || true" }] }],
+    "Stop":             [{ "hooks": [{ "type": "command", "command": "command -v perch >/dev/null 2>&1 && perch hook || true" }] }],
+    "SessionEnd":       [{ "hooks": [{ "type": "command", "command": "command -v perch >/dev/null 2>&1 && perch hook || true" }] }]
+  }
+}
