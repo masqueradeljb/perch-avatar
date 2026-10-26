@@ -16,5 +16,5 @@ Follow `llms-install.md`. In short: check macOS 14+ and Node 20+ → `brew insta
 - `cli/`: npm package `perch-avatar` (bins `perch`, `perch-mcp`). `cd cli && npm install && npm test && npm run build`. Config edits live in pure planners in `src/plan.ts` (each returns `{before, after, changed}` and must be idempotent); add tests in `test/plan.test.ts` for any change.
 - `scripts/build-app.sh`: builds `build/Perch.app`, zip and dmg. `--sign` / `--notarize` need the maintainer's Developer ID.
 - `adapters/codex/notify-chain.sh` is the single source; `npm run build` copies it to `cli/assets/`.
-- `plugins/perch/`: Claude Code plugin; `.claude-plugin/marketplace.json` lists it.
+- `plugins/perch/`: Claude Code plugin; `.claude-plugin/marketplace.json` lists it. `perch setup`/`doctor` detect it (`perchPluginActive` in `cli/src/clients.ts`) and skip/remove the setup-written Claude Code entries so hooks never double.
 - Never commit copyrighted characters' art; packs in this repo must be redistributable (Kuro is CC-BY-4.0).

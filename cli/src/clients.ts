@@ -40,3 +40,29 @@ export function targetsFor(client: Client, cmds: Commands, home = homeDir()): Ta
       return [{ client: client.id, file: client.configPath, plan: (t) => planCodex(t, cmds.mcp, cmds.notifyChain), unplan: (t) => unplanCodex(t, cmds.notifyChain) }];
   }
 }
+
+type Json = Record<string, unknown>;
+const asObj = (v: unknown): Json | null => (typeof v === "object" && v !== null && !Array.isArray(v) ? (v as Json) : null);
+const isPerchPluginId = (id: string): boolean => id.split("@")[0] === "perch";
+
+/** Pure: the Perch plugin is active if installed (any marketplace) and not explicitly disabled in enabledPlugins. */
+export function perchPluginActiveFrom(installed: unknown, settings: unknown): boolean {
+  const plugins = asObj(asObj(installed)?.plugins);
+  if (!plugins) return false;
+  const enabled = asObj(asObj(settings)?.enabledPlugins) ?? {};
+  return Object.keys(plugins).some((id) => {
+    if (!isPerchPluginId(id)) return false;
+    const entries = plugins[id];
+    if (Array.isArray(entries) && entries.length === 0) return false;
+    return enabled[id] !== false;
+  });
+}
+
+const readJson = (f: string): unknown => { try { return JSON.parse(fs.readFileSync(f, "utf8")); } catch { return null; } };
+
+export function perchPluginActive(home = homeDir()): boolean {
+  return perchPluginActiveFrom(
+    readJson(path.join(home, ".claude", "plugins", "installed_plugins.json")),
+    readJson(path.join(home, ".claude", "settings.json")),
+  );
+}

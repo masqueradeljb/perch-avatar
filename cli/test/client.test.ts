@@ -30,3 +30,14 @@ test("resolves null when the app is not running", async () => {
   const res = await send({ type: "targets" }, { socketPath: "/tmp/definitely-not-here.sock", timeoutMs: 200 });
   assert.equal(res, null);
 });
+
+import { perchPluginActiveFrom } from "../src/clients.js";
+test("perchPluginActiveFrom", () => {
+  const inst = (id: string) => ({ version: 2, plugins: { [id]: [{ scope: "user" }] } });
+  assert.equal(perchPluginActiveFrom(inst("perch@perch-avatar"), {}), true);
+  assert.equal(perchPluginActiveFrom(inst("perch@other-alias"), { enabledPlugins: { "perch@other-alias": true } }), true);
+  assert.equal(perchPluginActiveFrom(inst("perch@perch-avatar"), { enabledPlugins: { "perch@perch-avatar": false } }), false);
+  assert.equal(perchPluginActiveFrom(inst("perchy@x"), {}), false);
+  assert.equal(perchPluginActiveFrom(null, null), false);
+  assert.equal(perchPluginActiveFrom({ plugins: [] }, {}), false);
+});

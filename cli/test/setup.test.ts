@@ -65,3 +65,51 @@ test("--only limits clients; doctor reports and exits 0", async () => {
   assert.match(out, /✓ Codex configured/);
   assert.match(out, /✗ Claude Code is not configured/);
 });
+
+function addPlugin(home: string, enabled?: boolean) {
+  fs.mkdirSync(path.join(home, ".claude", "plugins"), { recursive: true });
+  fs.writeFileSync(path.join(home, ".claude", "plugins", "installed_plugins.json"), JSON.stringify({ version: 2, plugins: { "perch@perch-avatar": [{ scope: "user", installPath: "/x", version: "1" }] } }));
+  if (enabled !== undefined) {
+    const f = path.join(home, ".claude", "settings.json");
+    const s = JSON.parse(fs.readFileSync(f, "utf8"));
+    s.enabledPlugins = { "perch@perch-avatar": enabled };
+    fs.writeFileSync(f, JSON.stringify(s, null, 2) + "\n");
+  }
+}
+
+test("plugin active: setup skips Claude Code, doctor is happy", async () => {
+  const f = fixture();
+  addPlugin(f.home, true);
+  const before = fs.readFileSync(f.settings, "utf8");
+  await runSetup({ home: f.home, cmds, yes: true, skipApp: true }, f.io);
+  assert.match(f.lines.join("\n"), /Claude Code: using the Perch plugin — skipping/);
+  assert.ok(!/cli\.js hook/.test(fs.readFileSync(f.settings, "utf8")));
+  assert.equal(JSON.parse(fs.readFileSync(f.settings, "utf8")).theme, JSON.parse(before).theme);
+  f.lines.length = 0;
+  await runDoctor({ home: f.home, cmds }, f.io);
+  assert.match(f.lines.join("\n"), /✓ Claude Code configured \(Perch plugin\)/);
+});
+
+test("plugin active + setup entries: setup removes them, doctor flags double hooks first", async () => {
+  const f = fixture();
+  await runSetup({ home: f.home, cmds, yes: true, skipApp: true, only: ["claude-code"] }, f.io);
+  assert.match(fs.readFileSync(f.settings, "utf8"), /cli\.js hook/);
+  addPlugin(f.home);
+  f.lines.length = 0;
+  await runDoctor({ home: f.home, cmds }, f.io);
+  assert.match(f.lines.join("\n"), /✗ Claude Code has the Perch plugin and setup entries — events fire twice\./);
+  await runSetup({ home: f.home, cmds, yes: true, skipApp: true }, f.io);
+  const s = JSON.parse(fs.readFileSync(f.settings, "utf8"));
+  assert.ok(!/cli\.js hook/.test(JSON.stringify(s)));
+  assert.equal(s.hooks.Stop[0].hooks[0].command, "echo mine");
+  f.lines.length = 0;
+  await runDoctor({ home: f.home, cmds }, f.io);
+  assert.match(f.lines.join("\n"), /✓ Claude Code configured \(Perch plugin\)/);
+});
+
+test("plugin disabled in enabledPlugins counts as inactive", async () => {
+  const f = fixture();
+  addPlugin(f.home, false);
+  await runSetup({ home: f.home, cmds, yes: true, skipApp: true }, f.io);
+  assert.match(fs.readFileSync(f.settings, "utf8"), /cli\.js hook/);
+});

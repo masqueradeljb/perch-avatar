@@ -64,7 +64,7 @@ Everything is best effort: if Perch is not running, every CLI and MCP call silen
 
 The plugin adds the five hooks (`perch hook`) and the MCP server (`perch-mcp`). It relies on the global install (`npm i -g perch-avatar`) for the `perch` and `perch-mcp` commands. It also ships a `perch-setup` skill that sets up Claude Desktop and Codex for you.
 
-Use either the plugin or `perch setup` for Claude Code, not both, or every event fires twice. With the plugin installed, set up the other clients with `perch setup --only claude-desktop,codex`.
+`perch setup` detects the plugin automatically: it skips Claude Code (and removes any earlier setup-written Claude Code entries, so events don't fire twice) and sets up the other clients as usual. To let setup manage Claude Code instead, run `/plugin uninstall perch`.
 
 ## Manual configuration (fallback)
 
@@ -167,7 +167,7 @@ Everything runs on your Mac. Perch makes no network requests and has no telemetr
 perch doctor
 ```
 
-Checks that the app is installed and running, that the socket answers, that the Node path written into your configs still exists, and that each detected client is configured. It prints a fix for each ✗. (If you use the Claude Code plugin, ignore its "Claude Code is not configured" line: doctor only checks `~/.claude/settings.json`.) Common fixes: `open -a Perch`; re-run `perch setup` after upgrading Node or moving the install; restart Claude Desktop / Codex after setup.
+Checks that the app is installed and running, that the socket answers, that the Node path written into your configs still exists, and that each detected client is configured. It prints a fix for each ✗. With the Claude Code plugin installed, doctor counts it as configured, and warns if setup entries also exist (events would fire twice; `perch setup` removes them). Common fixes: `open -a Perch`; re-run `perch setup` after upgrading Node or moving the install; restart Claude Desktop / Codex after setup.
 
 ## Uninstall
 

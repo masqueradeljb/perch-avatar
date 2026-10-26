@@ -4,7 +4,7 @@ import path from "node:path";
 import readline from "node:readline/promises";
 import { fileURLToPath } from "node:url";
 import { send } from "./client.js";
-import { detectClients, homeDir, targetsFor, type Client, type ClientId, type Commands, type Target } from "./clients.js";
+import { detectClients, homeDir, perchPluginActive, targetsFor, type Client, type ClientId, type Commands, type Target } from "./clients.js";
 import { unifiedDiff } from "./diff.js";
 
 export type Io = { out: (s: string) => void; ask: (q: string) => Promise<boolean> };
@@ -79,10 +79,14 @@ async function apply(mode: "plan" | "unplan", clients: Client[], cmds: Commands,
   let changed = 0, errors = 0;
   for (const c of clients) {
     io.out(`\n== ${c.name} ==`);
+    const viaPlugin = mode === "plan" && c.id === "claude-code" && perchPluginActive(home);
+    if (viaPlugin) io.out("Claude Code: using the Perch plugin — skipping (remove it with /plugin uninstall perch to let setup manage Claude Code)");
     for (const t of targetsFor(c, cmds, home)) {
+      const m = viaPlugin ? "unplan" : mode;
       let r;
-      try { r = t[mode](read(t.file)); } catch (e) { errors++; io.out(`! ${t.file}: cannot parse (${(e as Error).message}) — left untouched`); continue; }
-      if (!r.changed) { io.out(`✓ ${t.file}: nothing to ${mode === "plan" ? "change (already configured)" : "remove"}`); continue; }
+      try { r = t[m](read(t.file)); } catch (e) { errors++; io.out(`! ${t.file}: cannot parse (${(e as Error).message}) — left untouched`); continue; }
+      if (!r.changed) { if (!viaPlugin) io.out(`✓ ${t.file}: nothing to ${m === "plan" ? "change (already configured)" : "remove"}`); continue; }
+      if (viaPlugin) io.out(`Removing duplicate setup entries from ${t.file} (the plugin provides them):`);
       io.out(unifiedDiff(r.before, r.after, t.file));
       changed++;
       if (o.dryRun) continue;
@@ -159,9 +163,14 @@ export async function runDoctor(o: Opts, io: Io): Promise<number> {
     fs.existsSync(node) && fs.existsSync(entry) ? ok(`Node path valid (${node})`) : bad("Node or perch path no longer exists", "perch setup");
     for (const c of detectClients(home)) {
       if (!c.detected) { io.out(`- ${c.name}: not detected`); continue; }
-      let good = true;
+      let good = true, present = false;
       for (const t of targetsFor(c, cmds, home)) {
         try { if (t.plan(read(t.file)).changed) good = false; } catch { good = false; }
+        if (c.id === "claude-code") { try { if (t.unplan(read(t.file)).changed) present = true; } catch { /* unparseable */ } }
+      }
+      if (c.id === "claude-code" && perchPluginActive(home)) {
+        present ? bad("Claude Code has the Perch plugin and setup entries — events fire twice.", "perch setup (removes the setup entries)") : ok("Claude Code configured (Perch plugin)");
+        continue;
       }
       good ? ok(`${c.name} configured`) : bad(`${c.name} is not configured (or still uses an old entry)`, "perch setup");
     }
