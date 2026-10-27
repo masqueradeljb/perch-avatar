@@ -54,7 +54,24 @@ export function chromeAct(tool: string, input: Record<string, unknown> | undefin
     return typeof input.text === "string" && /scrollTo|scrollBy|scrollIntoView/.test(input.text)
       ? { ...base, action: "scroll" } : null;
   }
+  if (tool === "mcp__claude-in-chrome__browser_batch") {
+    // Several tool calls run back to back; the first one that maps is where the character goes.
+    for (const step of batchSteps(input.actions)) {
+      const a = chromeAct(`mcp__claude-in-chrome__${step.name}`, step.input);
+      if (a) return a;
+    }
+  }
   return null;
+}
+
+/** `browser_batch` actions arrive as an array or as a JSON string of one. */
+function batchSteps(v: unknown): { name: string; input: Record<string, unknown> }[] {
+  let list = v;
+  if (typeof list === "string") {
+    try { list = JSON.parse(list); } catch { return []; }
+  }
+  if (!Array.isArray(list)) return [];
+  return list.filter((s) => typeof s?.name === "string" && s.name !== "browser_batch" && s.input && typeof s.input === "object");
 }
 
 export function toolActivity(tool: string): { activity?: string; window?: string } {

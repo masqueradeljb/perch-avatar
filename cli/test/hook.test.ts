@@ -76,6 +76,22 @@ test("chromeAct: javascript scrolling -> scroll act", () => {
   assert.equal(chromeAct(js, { action: "javascript_exec", text: "document.title" }), null);
 });
 
+test("chromeAct: browser_batch uses its first mappable action (array or JSON string)", () => {
+  const batch = "mcp__claude-in-chrome__browser_batch";
+  const actions = [
+    { name: "computer", input: { action: "wait", tabId: 1, duration: 2 } },
+    { name: "computer", input: { action: "left_click", tabId: 1, coordinate: [267, 360] } },
+    { name: "computer", input: { action: "type", tabId: 1, text: "hi" } },
+  ];
+  const click = act({ action: "click", x: 267, y: 360, space: "viewport" });
+  assert.deepEqual(chromeAct(batch, { actions }), click);
+  assert.deepEqual(chromeAct(batch, { actions: JSON.stringify(actions) }), click);
+  assert.deepEqual(chromeAct(batch, { actions: [{ name: "javascript_tool", input: { text: "window.scrollTo(0, 1)" } }] }),
+    act({ action: "scroll" }));
+  assert.equal(chromeAct(batch, { actions: [{ name: "computer", input: { action: "screenshot" } }] }), null);
+  assert.equal(chromeAct(batch, { actions: "not json" }), null);
+});
+
 test("PreToolUse with a Claude in Chrome click -> [state, act]", () => {
   assert.deepEqual(fromHook({ hook_event_name: "PreToolUse", tool_name: CC,
     tool_input: { action: "left_click", tabId: 197392681, coordinate: [274, 402] } }), [
