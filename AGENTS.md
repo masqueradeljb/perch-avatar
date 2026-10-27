@@ -2,7 +2,7 @@
 
 ## If you were asked to install Perch for the user
 
-Follow `llms-install.md`. In short: check macOS 14+ and Node 20+ → `brew install --cask perch-avatar` (or the DMG from GitHub Releases) → `npm i -g perch-avatar` → `perch setup --yes` → `perch doctor` → ask the user to grant Screen Recording if they want text pointing, and to restart Claude Desktop / Codex. Make no other config edits.
+Follow `llms-install.md`. In short: check macOS 14+ and Node 20+ → `brew install --cask masqueradeljb/tap/perch-avatar` (or the DMG from GitHub Releases) → `npm i -g perch-avatar` → `perch setup --yes` → `perch doctor` → ask the user to grant Screen Recording if they want text pointing, and to restart Claude Desktop / Codex. Make no other config edits.
 
 ## If Perch is installed and you have its MCP tools
 

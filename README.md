@@ -17,7 +17,7 @@ Perch is a small macOS app plus a CLI/MCP server. Your coding agent (Claude Code
 Requires macOS 14 or later and Node.js 20 or later.
 
 ```sh
-brew install --cask perch-avatar          # or download Perch-<version>.dmg from GitHub Releases
+brew install --cask masqueradeljb/tap/perch-avatar   # or download Perch-<version>.dmg from GitHub Releases
 npm i -g perch-avatar && perch setup
 ```
 
@@ -185,7 +185,7 @@ Checks that the app is installed and running, that the socket answers, that the 
 perch uninstall          # removes only Perch's entries from each client config (shows diffs, asks first)
 perch uninstall --restore  # or: put back the pre-Perch backups verbatim (edits made since are lost)
 npm rm -g perch-avatar
-brew uninstall --cask perch-avatar   # or drag Perch.app to the Trash
+brew uninstall --cask masqueradeljb/tap/perch-avatar   # or drag Perch.app to the Trash
 rm -rf ~/.perch
 ```
 
