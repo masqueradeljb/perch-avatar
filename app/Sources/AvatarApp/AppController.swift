@@ -140,7 +140,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         guard let (name, placement, window) = place(d) else {
             stage.hide()
             bubble.say(nil, above: nil)
-            statusItem.button?.title = "🐾"
+            statusItem.button?.toolTip = "Perch"
             lastTarget = nil
             lastWindow = nil
             lastAbove = nil
@@ -183,7 +183,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         stage.setBreathing(true)
         stage.setFx(d.fx)
         bubble.say(d.say, above: placement.frame)
-        statusItem.button?.title = "🐾 \(mode == .agent ? "agent" : "focus") · \(name)"
+        statusItem.button?.toolTip = "Perch · \(mode == .agent ? "agent" : "focus") · \(name)"
         lastTarget = placement.frame
     }
 
@@ -344,7 +344,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func setUpMenu() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        statusItem.button?.title = "🐾"
+        statusItem.button?.image = StatusIcon.catHead()
         statusItem.button?.toolTip = "Perch"
         let menu = NSMenu()
         modeItems = Self.modes.map { title, m in
