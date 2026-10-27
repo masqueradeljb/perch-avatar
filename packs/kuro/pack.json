@@ -243,12 +243,12 @@
       "facing": "right",
       "contact": {
         "x": [
-          0.2851,
-          0.9121
+          0.3266,
+          0.9765
         ],
         "y": [
-          0.9813,
-          0.9813
+          0.9436,
+          0.9436
         ]
       },
       "frames": [
@@ -294,6 +294,150 @@
       "frames": [
         "poses/tail_swipe.png",
         "poses/tail_swipe.f2.png"
+      ],
+      "fps": 4
+    },
+    "point_side": {
+      "anchor": "floor",
+      "image": "poses/point_side.png",
+      "facing": "right",
+      "contact": {
+        "x": [
+          0.0269,
+          0.434
+        ],
+        "y": [
+          0.9693,
+          0.9693
+        ]
+      },
+      "hotspot": {
+        "tip": [
+          0.9894,
+          0.4212
+        ]
+      },
+      "family": "point"
+    },
+    "point_down": {
+      "anchor": "edge_top",
+      "image": "poses/point_down.png",
+      "facing": "right",
+      "contact": {
+        "x": [
+          0.0172,
+          0.903
+        ],
+        "y": [
+          0.4489,
+          0.4489
+        ]
+      },
+      "hotspot": {
+        "tip": [
+          0.7558,
+          0.9082
+        ]
+      },
+      "family": "point"
+    },
+    "tap": {
+      "anchor": "floor",
+      "image": "poses/tap.png",
+      "facing": "right",
+      "contact": {
+        "x": [
+          0.2927,
+          0.8618
+        ],
+        "y": [
+          0.9597,
+          0.9597
+        ]
+      },
+      "hotspot": {
+        "tip": [
+          0.9555,
+          0.1695
+        ]
+      },
+      "frames": [
+        "poses/tap.png",
+        "poses/tap.f2.png"
+      ],
+      "fps": 5
+    },
+    "tap_side": {
+      "anchor": "floor",
+      "image": "poses/tap_side.png",
+      "facing": "right",
+      "contact": {
+        "x": [
+          0.0201,
+          0.4367
+        ],
+        "y": [
+          0.9406,
+          0.9406
+        ]
+      },
+      "hotspot": {
+        "tip": [
+          0.9899,
+          0.2833
+        ]
+      },
+      "family": "tap",
+      "frames": [
+        "poses/tap_side.png",
+        "poses/tap_side.f2.png"
+      ],
+      "fps": 5
+    },
+    "tap_down": {
+      "anchor": "edge_top",
+      "image": "poses/tap_down.png",
+      "facing": "right",
+      "contact": {
+        "x": [
+          0.0172,
+          0.9274
+        ],
+        "y": [
+          0.4229,
+          0.4229
+        ]
+      },
+      "hotspot": {
+        "tip": [
+          0.7749,
+          0.8986
+        ]
+      },
+      "family": "tap",
+      "frames": [
+        "poses/tap_down.png",
+        "poses/tap_down.f2.png"
+      ],
+      "fps": 5
+    },
+    "scroll": {
+      "anchor": "floor",
+      "image": "poses/scroll.png",
+      "facing": "right",
+      "contact": {
+        "x": [
+          0.0266,
+          0.6527
+        ],
+        "y": [
+          0.9726,
+          0.9726
+        ]
+      },
+      "frames": [
+        "poses/scroll.png",
+        "poses/scroll.f2.png"
       ],
       "fps": 4
     }
