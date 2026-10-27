@@ -1,3 +1,5 @@
+import Foundation
+
 /// Where the character is attached relative to the target window.
 public enum Edge: String, CaseIterable {
     case top, cornerLeft, cornerRight, side, floor, inset, pointing
@@ -33,6 +35,19 @@ public struct Placement: Equatable {
     public var frame: Rect
     public var mirrored: Bool
     public var scale: Double
+}
+
+/// A pose that can point: its box and normalized hotspot tip (as drawn, facing right).
+public struct PointCandidate: Equatable {
+    public var name: String
+    public var box: PoseBox
+    public var tip: [Double]
+
+    public init(name: String, box: PoseBox, tip: [Double]) {
+        self.name = name
+        self.box = box
+        self.tip = tip
+    }
 }
 
 public struct PlacementInput {
@@ -83,12 +98,36 @@ public enum Placer {
     /// (facing right), or its right side mirrored when there is no room on the left.
     public static func pointAt(_ rect: Rect, box: PoseBox, tip: [Double], usable: Rect) -> Placement? {
         for mirrored in [false, true] {
-            let tipX = (mirrored ? 1 - tip[0] : tip[0]) * box.w
-            let anchorX = mirrored ? rect.maxX : rect.x
-            let frame = Rect(x: anchorX - tipX, y: rect.y + rect.h / 2 - tip[1] * box.h, w: box.w, h: box.h)
+            let frame = pointFrame(rect, box: box, tip: tip, mirrored: mirrored)
             if usable.contains(frame) { return Placement(edge: .pointing, frame: frame, mirrored: mirrored, scale: 1) }
         }
         return nil
+    }
+
+    /// Frame that puts the hotspot on the middle of the rect's left side (right side when mirrored).
+    public static func pointFrame(_ rect: Rect, box: PoseBox, tip: [Double], mirrored: Bool) -> Rect {
+        let tipX = (mirrored ? 1 - tip[0] : tip[0]) * box.w
+        let anchorX = mirrored ? rect.maxX : rect.x
+        return Rect(x: anchorX - tipX, y: rect.y + rect.h / 2 - tip[1] * box.h, w: box.w, h: box.h)
+    }
+
+    /// Picks the variant and facing whose frame fits `usable` and lies closest to `current`, so a
+    /// nearby target swings the tail instead of moving the body. Without `current`: the first that fits.
+    public static func pickPointing(_ rect: Rect, candidates: [PointCandidate], usable: Rect,
+                                    near current: Rect?) -> (name: String, placement: Placement)? {
+        var best: (name: String, placement: Placement, distance: Double)?
+        for c in candidates {
+            for mirrored in [false, true] {
+                let frame = pointFrame(rect, box: c.box, tip: c.tip, mirrored: mirrored)
+                guard usable.contains(frame) else { continue }
+                let p = Placement(edge: .pointing, frame: frame, mirrored: mirrored, scale: 1)
+                guard let current else { return (c.name, p) }
+                let distance = hypot(frame.x + frame.w / 2 - current.x - current.w / 2,
+                                     frame.y + frame.h / 2 - current.y - current.h / 2)
+                if best == nil || distance < best!.distance { best = (c.name, p, distance) }
+            }
+        }
+        return best.map { ($0.name, $0.placement) }
     }
 
     static let cornerOverhang = 0.3

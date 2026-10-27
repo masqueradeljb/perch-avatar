@@ -43,6 +43,8 @@ public struct Pose: Codable, Equatable {
     /// Animation frames incl. the base image, pixel-aligned; cycled at `fps` (default 4).
     public var frames: [String]?
     public var fps: Double?
+    /// Variant of another pose (e.g. "point"): same meaning, the hotspot reaching another way.
+    public var family: String?
 }
 
 public struct Pack: Codable, Equatable {
