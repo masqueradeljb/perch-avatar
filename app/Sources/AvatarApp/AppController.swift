@@ -30,6 +30,11 @@ final class AppController: NSObject, NSApplicationDelegate {
     static let textWindowLimit = 5
     private var blinkUntil = 0.0
     private var nextBlink = 0.0
+    private var ripple: Ripple!
+    private var watcher: InputWatcher?
+    private let coalescer = ActCoalescer()
+    private var ignoreApps: Set<String> = []
+    private var actionsItem: NSMenuItem!
 
     enum FollowMode: String { case focus, agent }
     private var mode: FollowMode = .focus
@@ -61,6 +66,7 @@ final class AppController: NSObject, NSApplicationDelegate {
         stage.onDoubleClick = { [weak self] in self?.toggleMode() }
         stage.onRightClick = { [weak self] event in self?.showContextMenu(event) }
         bubble = Bubble()
+        ripple = Ripple()
         director = Director(now: now)
         let server = SocketServer { [weak self] envelope in self?.handle(envelope) ?? Response(ok: false) }
         do {
@@ -70,6 +76,8 @@ final class AppController: NSObject, NSApplicationDelegate {
             fputs("Perch: socket disabled: \(error)\n", stderr)
         }
         setUpMenu()
+        ignoreApps = PerchConfig.ignoreApps(home: FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".perch"))
+        startWatcher()
         timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60, repeats: true) { [weak self] _ in self?.tick() }
     }
 
@@ -87,6 +95,10 @@ final class AppController: NSObject, NSApplicationDelegate {
                 WindowInfo(app: $0.app, rect: $0.rect, focused: $0.pid == front)
             }
             return Response(ok: true, windows: windows)
+        }
+        if case let .act(a) = request {
+            perform(a)
+            return Response(ok: true)
         }
         director.handle(request, at: now)
         return Response(ok: true)
@@ -264,6 +276,42 @@ final class AppController: NSObject, NSApplicationDelegate {
         return t < blinkUntil ? "blink" : nil
     }
 
+    /// Watches posted input when Input Monitoring is granted; the menu item says which.
+    private func startWatcher() {
+        if watcher == nil, InputWatcher.hasPermission {
+            let w = InputWatcher { [weak self] event, pid in self?.received(event, from: pid) }
+            if w.start() { watcher = w }
+        }
+        actionsItem.title = watcher != nil ? "Desktop actions: on" : "Desktop actions: grant Input Monitoring, then relaunch…"
+        actionsItem.action = watcher != nil ? nil : #selector(requestInputMonitoring)
+    }
+
+    /// Posted input counts as the agent's only while it is busy, and never from an ignored app.
+    private func received(_ event: InputEvent, from pid: pid_t) {
+        let t = now
+        guard director.isBusy(at: t) else { return }
+        if let name = NSRunningApplication(processIdentifier: pid)?.localizedName?.lowercased(),
+           ignoreApps.contains(name) { return }
+        if let act = coalescer.feed(event, at: t) { perform(act) }
+    }
+
+    private func perform(_ act: ActRequest) {
+        if act.action == .click || act.action == .drag, let x = act.x, let y = act.y { ripple.show(x: x, y: y) }
+        director.handle(.act(act), at: now)
+    }
+
+    @objc private func requestInputMonitoring() {
+        InputWatcher.requestPermission()
+        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent")!)
+    }
+
+    @objc private func simulateAct(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let action = ActAction(rawValue: raw),
+              let w = WindowProbe.focusedWindow(excludingPID: getpid()) else { return }
+        perform(ActRequest(action: action, x: w.rect.x + w.rect.w / 2, y: w.rect.y + w.rect.h / 2,
+                           dir: action == .scroll ? .down : nil, source: "menu"))
+    }
+
     private func setUpMenu() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem.button?.title = "🐾"
@@ -288,9 +336,18 @@ final class AppController: NSObject, NSApplicationDelegate {
         let say = NSMenuItem(title: "say hello", action: #selector(simulateSay), keyEquivalent: "")
         say.target = self
         simulate.addItem(say)
+        for (title, action) in [("click (focused window)", ActAction.click), ("scroll down (focused window)", .scroll)] {
+            let item = NSMenuItem(title: title, action: #selector(simulateAct(_:)), keyEquivalent: "")
+            item.representedObject = action.rawValue
+            item.target = self
+            simulate.addItem(item)
+        }
         let simulateItem = NSMenuItem(title: "Simulate", action: nil, keyEquivalent: "")
         simulateItem.submenu = simulate
         menu.addItem(simulateItem)
+        actionsItem = NSMenuItem(title: "Desktop actions", action: nil, keyEquivalent: "")
+        actionsItem.target = self
+        menu.addItem(actionsItem)
         menu.addItem(.separator())
         let auto = NSMenuItem(title: "Auto", action: #selector(pickEdge(_:)), keyEquivalent: "")
         auto.tag = -1
