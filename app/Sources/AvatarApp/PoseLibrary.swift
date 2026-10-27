@@ -64,10 +64,14 @@ final class PoseLibrary {
 
     func has(_ name: String) -> Bool { entries[name] != nil }
 
+    /// Stand-ins for missing desktop-action poses, tried before the generic fallbacks.
+    static let actionFallbacks = ["tap": "point", "scroll": "tail_swipe"]
+
     /// The pose to draw for `name`: itself if the pack has it with a contact, else a same-anchor fallback.
     /// A missing action pose (type, read, search, tail_swipe) falls back to `work` when the pack has it.
     func resolve(_ name: String) -> String {
         if let e = entries[name], e.box != nil { return name }
+        if let f = Self.actionFallbacks[name] { return resolve(f) }
         if Director.activityPoses.values.contains(name), let work = entries["work"], work.box != nil { return "work" }
         return entries[name]?.pose.anchor == .edgeTop || name == "sleep" || name == "lie_low" ? "lie_edge" : "stand"
     }
@@ -88,6 +92,15 @@ final class PoseLibrary {
     func box(_ name: String) -> PoseBox? { entries[name]?.box }
 
     func hotspot(_ name: String) -> [Double]? { entries[name]?.pose.hotspot?.tip }
+
+    /// Pointing candidates for a resolved pose: itself, then the poses of its `family`, by name.
+    func pointCandidates(_ head: String) -> [PointCandidate] {
+        let variants = entries.filter { $0.value.pose.family == head && $0.key != head }.keys.sorted()
+        return ([head] + variants).compactMap { n in
+            guard let e = entries[n], let box = e.box, let tip = e.pose.hotspot?.tip else { return nil }
+            return PointCandidate(name: n, box: box, tip: tip)
+        }
+    }
 
     /// Face image if the pose has it, else the base image.
     func image(_ name: String, face: String?) -> CGImage? {

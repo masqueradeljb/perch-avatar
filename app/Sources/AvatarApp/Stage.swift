@@ -59,7 +59,7 @@ final class Stage {
     }
 
     static let fxGlyph = ["exclaim": "❗", "question": "❓", "sparkle": "✨", "zzz": "💤",
-                          "sweat": "💦", "speedlines": "💨"]
+                          "sweat": "💦", "speedlines": "💨", "scroll_up": "⏫", "scroll_down": "⏬"]
 
     init() {
         panel = NSPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel],

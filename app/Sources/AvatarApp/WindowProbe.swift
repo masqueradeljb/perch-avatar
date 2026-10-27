@@ -49,6 +49,14 @@ enum WindowProbe {
         normalWindows(excludingPID: ownPID).first { $0.pid == pid }
     }
 
+    /// Frontmost normal window containing the rect's center.
+    static func window(at r: Rect, excludingPID ownPID: pid_t) -> Listed? {
+        let cx = r.x + r.w / 2, cy = r.y + r.h / 2
+        return normalWindows(excludingPID: ownPID).first {
+            cx >= $0.rect.x && cx <= $0.rect.maxX && cy >= $0.rect.y && cy <= $0.rect.maxY
+        }
+    }
+
     /// Whether `window` is the frontmost normal window on screen (nothing of ours counts).
     static func isFrontmost(_ number: Int, excludingPID ownPID: pid_t) -> Bool {
         normalWindows(excludingPID: ownPID).first?.number == number

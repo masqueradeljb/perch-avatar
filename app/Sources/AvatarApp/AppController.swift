@@ -152,10 +152,19 @@ final class AppController: NSObject, NSApplicationDelegate {
     /// Chooses the drawn pose and its placement for a directive.
     /// Also returns the target window (nil when pointing at a rect) for run decisions.
     private func place(_ d: Directive) -> (String, Placement, (pid: pid_t, rect: Rect, number: Int)?)? {
-        if case let .rect(r)? = d.target, let tip = library.hotspot(library.resolve(d.pose)),
-           let box = library.box(library.resolve(d.pose)) {
+        if case let .rect(r)? = d.target {
+            let head = library.resolve(d.pose)
             let usable = WindowProbe.screenRects(containing: r).usable
-            if let p = Placer.pointAt(r, box: box, tip: tip, usable: usable) { return (library.resolve(d.pose), p, nil) }
+            if let picked = Placer.pickPointing(r, candidates: library.pointCandidates(head), usable: usable,
+                                                near: stage.characterFrame) {
+                return (picked.name, picked.placement, nil)
+            }
+            // A pose that can't point (scroll, type) perches on top of the window under the point, above it.
+            if let w = WindowProbe.window(at: r, excludingPID: getpid()) {
+                var perch = d
+                perch.target = .window(app: w.app, edge: "top", pos: (r.x - w.rect.x) / w.rect.w)
+                return place(perch)
+            }
         }
         var window: WindowProbe.Listed?
         var preferRight: Bool?
