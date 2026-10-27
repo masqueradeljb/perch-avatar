@@ -26,6 +26,8 @@ public struct DirectorConfig {
     public var idleSleep = 300.0
     /// thinking/working with no news for this long is treated as idle (agent died or forgot).
     public var staleBusy = 120.0
+    /// How long an `act` (a click / scroll / typing burst) is shown.
+    public var actHold = 0.8
 
     public init() {}
 }
@@ -37,7 +39,9 @@ public final class Director {
     private var activity: String?
     private var stateAt: Double
     private var lastEventAt: Double
-    private var show: (request: ShowRequest, until: Double)?
+    private var show: (request: ShowRequest, until: Double, act: Bool)?
+    /// The last directive came from an act: the busy pose may replace it at once (no minDwell).
+    private var lastWasAct = false
     private var emitted: Directive?
     private var poseChangedAt = -Double.infinity
 
@@ -51,6 +55,22 @@ public final class Director {
     public static let activityPoses = ["typing": "type", "reading": "read", "searching": "search",
                                        "browsing": "search", "running": "tail_swipe"]
 
+    /// The short show that plays an act: tap at the point (click/drag), scroll with an arrow, or type there.
+    public static func showRequest(for a: ActRequest) -> ShowRequest {
+        var at: Target?
+        if let x = a.x, let y = a.y { at = .rect(Rect(x: x, y: y, w: 1, h: 1)) }
+        switch a.action {
+        case .click, .drag: return ShowRequest(pose: "tap", at: at)
+        case .scroll: return ShowRequest(pose: "scroll", at: at, fx: a.dir == .up ? "scroll_up" : "scroll_down")
+        case .type: return ShowRequest(pose: "type", at: at)
+        }
+    }
+
+    /// Working or thinking, and heard from recently: posted input now is probably the agent's.
+    public func isBusy(at now: Double) -> Bool {
+        (state == .working || state == .thinking) && now - lastEventAt < config.staleBusy
+    }
+
     public func handle(_ request: Request, at now: Double) {
         switch request {
         case let .state(s, _, a):
@@ -59,10 +79,10 @@ public final class Director {
             stateAt = now
             lastEventAt = now
         case let .show(r):
-            show = (r, now + (r.holdS ?? config.defaultHold))
+            show = (r, now + (r.holdS ?? config.defaultHold), false)
             lastEventAt = now
-        case .act:
-            break
+        case let .act(a):
+            show = (Self.showRequest(for: a), now + config.actHold, true)
         case .targets:
             break
         }
@@ -72,10 +92,13 @@ public final class Director {
         if let s = show, now < s.until {
             let r = s.request
             let d = Directive(pose: r.pose ?? emitted?.pose ?? "lie_edge", face: r.face, fx: r.fx, say: r.say, target: r.at)
+            lastWasAct = s.act
             return emit(d, at: now, force: true)
         }
         show = nil
-        return emit(stateDirective(at: now), at: now, force: false)
+        let afterAct = lastWasAct
+        lastWasAct = false
+        return emit(stateDirective(at: now), at: now, force: afterAct)
     }
 
     private func stateDirective(at now: Double) -> Directive {
