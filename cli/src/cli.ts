@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 import { send } from "./client.js";
 import { fromHook } from "./hook.js";
+import { parseAct } from "./act.js";
 
 const USAGE = `perch state <thinking|working|done|error|waiting_user|idle> [--note text] [--window app|home] [--activity typing|reading|searching|browsing|running]
 perch hook   (reads a Claude Code hook JSON payload on stdin)
 perch show [--pose p] [--face f] [--say text] [--fx f] [--hold s] [--window app] [--rect x,y,w,h]
+perch act <click|scroll|type|drag> [x y] [--dir up|down]
 perch targets
 perch setup [--yes] [--only claude-code,claude-desktop,codex] [--dry-run]
 perch doctor
@@ -40,6 +42,8 @@ if (cmd === "state" && rest[0]) {
 } else if (cmd === "show") {
   const at = f.rect ? { rect: f.rect.split(",").map(Number) } : f.window ? { window: f.window } : undefined;
   request = { type: "show", pose: f.pose, face: f.face, say: f.say, fx: f.fx, hold_s: f.hold ? Number(f.hold) : undefined, at };
+} else if (cmd === "act") {
+  request = parseAct(rest);
 } else if (cmd === "targets") {
   request = { type: "targets" };
 }

@@ -42,6 +42,7 @@ Using Claude Code only? You can install the plugin instead (see [Claude Code plu
   | Session ends / long quiet | idle | back home, then `sleep` |
 
 - **Points at text.** An agent can ask Kuro to point her tail at visible text in a window (`avatar_show` with `at: {text}`), for example "the failing test name". Perch finds the text on screen with on-device OCR (needs Screen Recording permission).
+- **Desktop actions.** When the agent clicks, scrolls or types through computer use, Kuro taps, scrolls or types at that spot (needs Input Monitoring; see [Privacy](#privacy)).
 - **Speech bubbles and effects.** Short lines (`say`, up to 60 characters) and effects (`exclaim`, `question`, `sparkle`, `zzz`, `sweat`, `speedlines`).
 
 Everything is best effort: if Perch is not running, every CLI and MCP call silently does nothing and never fails the agent's task.
@@ -132,13 +133,14 @@ The `perch-mcp` stdio server (server name `perch`) has three tools:
 perch state <thinking|working|done|error|waiting_user|idle> [--note text] [--window app|home] [--activity typing|reading|searching|browsing|running]
 perch hook          # reads a Claude Code hook JSON payload on stdin
 perch show [--pose p] [--face f] [--say text] [--fx f] [--hold s] [--window app] [--rect x,y,w,h]
+perch act <click|scroll|type|drag> [x y] [--dir up|down]
 perch targets
 perch setup [--yes] [--only claude-code,claude-desktop,codex] [--dry-run]
 perch doctor
 perch uninstall [--restore] [--yes] [--dry-run]
 ```
 
-`perch state`, `hook`, `show` and `targets` always exit 0.
+`perch state`, `hook`, `show`, `act` and `targets` always exit 0.
 
 ## Socket protocol (other integrations)
 
@@ -148,18 +150,22 @@ Newline-delimited JSON on the Unix socket `~/.perch/perch.sock` (override with `
 echo '{"type":"state","state":"working","activity":"typing"}' | nc -U ~/.perch/perch.sock
 ```
 
-Request types: `state` (`state`, `note?`, `activity?`, `window?`), `show` (same fields as `avatar_show`), `targets`. Add `"pid": <your process id>` so Perch can find your window.
+Request types: `state` (`state`, `note?`, `activity?`, `window?`), `show` (same fields as `avatar_show`), `act` (`action`: `click|scroll|type|drag`, `x?`, `y?` in screen points, `dir?`: `up|down`), `targets`. Add `"pid": <your process id>` so Perch can find your window.
 
 ## Packs
 
 A pack is a folder with `pack.json` and transparent PNG poses (12 core poses with anchors such as `edge_top`, `corner`, `floor`, plus optional faces and action poses). Perch loads, in order: `--pack <dir>` → `~/.perch/packs/<id>` selected by `~/.perch/config.json` (`{"pack": "<id>"}`) → the bundled Kuro.
+
+Optional desktop-action poses: `tap` (2 frames, hotspot at what presses) and `scroll` (2 frames). Missing ones fall back: `tap` → `point`, `scroll` → `tail_swipe` → `work`. A pose may declare `"family": "point"` (or `"tap"`) to be a directional variant; Perch picks the variant whose placement is closest to where the character already is.
 
 - Code: MIT ([LICENSE](LICENSE)).
 - Kuro artwork (`packs/kuro/`): CC-BY-4.0 ([packs/kuro/LICENSE](packs/kuro/LICENSE)), "Kuro © 2026 Jingbang Liu". Other packs carry their own license in their `pack.json`.
 
 ## Privacy
 
-Everything runs on your Mac. Perch makes no network requests and has no telemetry. Agents talk to it over a local Unix socket. Screen Recording permission is needed **only** for pointing at text (Perch reads the agent's window with on-device OCR to find the words). Without it, everything else still works. Grant it in System Settings > Privacy & Security > Screen & System Audio Recording > Perch.
+Everything runs on your Mac. Perch makes no network requests and has no telemetry. Agents talk to it over a local Unix socket. Screen Recording permission is needed for pointing at text (Perch reads the agent's window with on-device OCR to find the words). Without it, everything else still works. Grant it in System Settings > Privacy & Security > Screen & System Audio Recording > Perch.
+
+**Input Monitoring** is used only to notice clicks, scrolls and key presses that *another program posted* (an agent's computer use) while your agent is working; your own keyboard and mouse are ignored, and keys are counted, never read. Without it, desktop actions are off. Apps listed in `~/.perch/config.json` `"ignoreApps"` are never treated as the agent.
 
 ## Troubleshooting
 
