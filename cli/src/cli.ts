@@ -37,8 +37,10 @@ let request: Record<string, unknown> | null = null;
 if (cmd === "state" && rest[0]) {
   request = { type: "state", state: rest[0], note: f.note, window: f.window, activity: f.activity };
 } else if (cmd === "hook") {
-  try { request = fromHook(JSON.parse(await readStdin())); } catch { request = null; }
-  if (!request) process.exit(0);
+  let requests: Record<string, unknown>[] = [];
+  try { requests = fromHook(JSON.parse(await readStdin())); } catch { requests = []; }
+  for (const r of requests) await send(r);
+  process.exit(0);
 } else if (cmd === "show") {
   const at = f.rect ? { rect: f.rect.split(",").map(Number) } : f.window ? { window: f.window } : undefined;
   request = { type: "show", pose: f.pose, face: f.face, say: f.say, fx: f.fx, hold_s: f.hold ? Number(f.hold) : undefined, at };

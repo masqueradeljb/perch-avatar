@@ -42,7 +42,7 @@ Using Claude Code only? You can install the plugin instead (see [Claude Code plu
   | Session ends / long quiet | idle | back home, then `sleep` |
 
 - **Points at text.** An agent can ask Kuro to point her tail at visible text in a window (`avatar_show` with `at: {text}`), for example "the failing test name". Perch finds the text on screen with on-device OCR (needs Screen Recording permission).
-- **Desktop actions.** When the agent clicks, scrolls or types through computer use, Kuro taps, scrolls or types at that spot (needs Input Monitoring; see [Privacy](#privacy)).
+- **Desktop actions.** When the agent clicks, scrolls or types through computer use, Kuro taps, scrolls or types at that spot (needs Input Monitoring; see [Privacy](#privacy)). Claude in Chrome drives the page without system input, so its clicks, scrolls and typing are mapped from the Claude Code hook instead: page coordinates are converted to screen points assuming Chrome's toolbar is 87 pt tall (set `"browserTopInset"` in `~/.perch/config.json`, e.g. `115` with the bookmarks bar shown). This is best effort: it uses the front Chrome window and assumes 100% zoom.
 - **Speech bubbles and effects.** Short lines (`say`, up to 60 characters) and effects (`exclaim`, `question`, `sparkle`, `zzz`, `sweat`, `speedlines`).
 
 Everything is best effort: if Perch is not running, every CLI and MCP call silently does nothing and never fails the agent's task.

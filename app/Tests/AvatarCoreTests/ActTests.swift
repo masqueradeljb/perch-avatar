@@ -11,6 +11,8 @@ final class ActTests: XCTestCase {
                        .act(ActRequest(action: .scroll, x: 5, y: 6, dir: .down, source: "input")))
         XCTAssertEqual(try decode(#"{"type":"act","action":"type"}"#), .act(ActRequest(action: .type)))
         XCTAssertThrowsError(try decode(#"{"type":"act","action":"wiggle"}"#))
+        XCTAssertEqual(try decode(#"{"type":"act","action":"click","x":274,"y":402,"space":"viewport"}"#),
+                       .act(ActRequest(action: .click, x: 274, y: 402, space: "viewport")))
     }
 
     func testClickShowsTapAtPointThenBusyPoseReturnsAtOnce() {

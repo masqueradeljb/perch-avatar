@@ -88,13 +88,18 @@ public struct ActRequest: Codable, Equatable {
     public var y: Double?
     public var dir: ScrollDir?
     public var source: String?
+    /// nil = x/y are screen points; "viewport" = page-viewport points in the browser window named by the
+    /// envelope's `window` (default "Google Chrome").
+    public var space: String?
 
-    public init(action: ActAction, x: Double? = nil, y: Double? = nil, dir: ScrollDir? = nil, source: String? = nil) {
+    public init(action: ActAction, x: Double? = nil, y: Double? = nil, dir: ScrollDir? = nil, source: String? = nil,
+                space: String? = nil) {
         self.action = action
         self.x = x
         self.y = y
         self.dir = dir
         self.source = source
+        self.space = space
     }
 }
 

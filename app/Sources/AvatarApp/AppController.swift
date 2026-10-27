@@ -34,6 +34,7 @@ final class AppController: NSObject, NSApplicationDelegate {
     private var watcher: InputWatcher?
     private let coalescer = ActCoalescer()
     private var ignoreApps: Set<String> = []
+    private var browserTopInset = Viewport.defaultTopInset
     private var actionsItem: NSMenuItem!
     /// Posted input this recent keeps the character click-through, so it never catches the agent's next click.
     static let clickThroughAfterPostedInput = 2.0
@@ -79,7 +80,9 @@ final class AppController: NSObject, NSApplicationDelegate {
             fputs("Perch: socket disabled: \(error)\n", stderr)
         }
         setUpMenu()
-        ignoreApps = PerchConfig.ignoreApps(home: FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".perch"))
+        let perchHome = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".perch")
+        ignoreApps = PerchConfig.ignoreApps(home: perchHome)
+        browserTopInset = PerchConfig.browserTopInset(home: perchHome) ?? Viewport.defaultTopInset
         startWatcher()
         timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60, repeats: true) { [weak self] _ in self?.tick() }
     }
@@ -99,7 +102,21 @@ final class AppController: NSObject, NSApplicationDelegate {
             }
             return Response(ok: true, windows: windows)
         }
-        if case let .act(a) = request {
+        if case var .act(a) = request {
+            if a.space == "viewport" {
+                // Browser automation (Claude in Chrome) reports page coordinates; best effort: front window, 100% zoom.
+                if let w = WindowProbe.window(ofApp: envelope.window ?? "Google Chrome", excludingPID: getpid()) {
+                    if let x = a.x, let y = a.y {
+                        let p = Viewport.toScreen(x: x, y: y, window: w.rect, topInset: browserTopInset)
+                        a.x = p.x
+                        a.y = p.y
+                    }
+                } else {
+                    a.x = nil
+                    a.y = nil
+                }
+                a.space = nil
+            }
             perform(a)
             return Response(ok: true)
         }
