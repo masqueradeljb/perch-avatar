@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/icon.png" width="128" height="128" alt="Perch icon">
+</p>
+
 # Perch
 
 **A desktop pet that perches on whatever window your agent is working in.**
