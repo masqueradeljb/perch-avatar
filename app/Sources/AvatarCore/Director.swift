@@ -40,6 +40,10 @@ public final class Director {
     private var stateAt: Double
     private var lastEventAt: Double
     private var show: (request: ShowRequest, until: Double, act: Bool)?
+    /// A regular show an act cut into; it resumes when the act ends if its time isn't up.
+    private var interrupted: (request: ShowRequest, until: Double)?
+    /// Pose of the last directive not from an act; a pose-less show keeps it.
+    private var restingPose: String?
     /// The last directive came from an act: the busy pose may replace it at once (no minDwell).
     private var lastWasAct = false
     private var emitted: Directive?
@@ -71,6 +75,9 @@ public final class Director {
         (state == .working || state == .thinking) && now - lastEventAt < config.staleBusy
     }
 
+    /// An act is on screen now (the character sits where the agent is clicking).
+    public func isActing(at now: Double) -> Bool { show.map { $0.act && now < $0.until } ?? false }
+
     public func handle(_ request: Request, at now: Double) {
         switch request {
         case let .state(s, _, a):
@@ -80,25 +87,38 @@ public final class Director {
             lastEventAt = now
         case let .show(r):
             show = (r, now + (r.holdS ?? config.defaultHold), false)
+            interrupted = nil
             lastEventAt = now
         case let .act(a):
+            if let s = show, !s.act, now < s.until { interrupted = (s.request, s.until) }
             show = (Self.showRequest(for: a), now + config.actHold, true)
+            // An act is evidence the agent is alive; isBusy still needs a working/thinking state.
+            lastEventAt = now
         case .targets:
             break
         }
     }
 
     public func directive(at now: Double) -> Directive {
+        if let s = show, s.act, now >= s.until {
+            if let i = interrupted, now < i.until { show = (i.request, i.until, false) }
+            interrupted = nil
+        }
         if let s = show, now < s.until {
             let r = s.request
-            let d = Directive(pose: r.pose ?? emitted?.pose ?? "lie_edge", face: r.face, fx: r.fx, say: r.say, target: r.at)
+            let d = Directive(pose: r.pose ?? restingPose ?? emitted?.pose ?? "lie_edge",
+                              face: r.face, fx: r.fx, say: r.say, target: r.at)
             lastWasAct = s.act
-            return emit(d, at: now, force: true)
+            let out = emit(d, at: now, force: true)
+            if !s.act { restingPose = out.pose }
+            return out
         }
         show = nil
         let afterAct = lastWasAct
         lastWasAct = false
-        return emit(stateDirective(at: now), at: now, force: afterAct)
+        let out = emit(stateDirective(at: now), at: now, force: afterAct)
+        restingPose = out.pose
+        return out
     }
 
     private func stateDirective(at now: Double) -> Directive {

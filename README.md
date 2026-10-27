@@ -165,7 +165,7 @@ Optional desktop-action poses: `tap` (2 frames, hotspot at what presses) and `sc
 
 Everything runs on your Mac. Perch makes no network requests and has no telemetry. Agents talk to it over a local Unix socket. Screen Recording permission is needed for pointing at text (Perch reads the agent's window with on-device OCR to find the words). Without it, everything else still works. Grant it in System Settings > Privacy & Security > Screen & System Audio Recording > Perch.
 
-**Input Monitoring** is used only to notice clicks, scrolls and key presses that *another program posted* (an agent's computer use) while your agent is working; your own keyboard and mouse are ignored, and keys are counted, never read. Without it, desktop actions are off. Apps listed in `~/.perch/config.json` `"ignoreApps"` are never treated as the agent.
+**Input Monitoring** is used only to notice clicks, scrolls and key presses that *another program posted* (an agent's computer use) while your agent is working, and keys are counted, never read. Input straight from your keyboard and mouse is ignored, but utilities that re-post your input (scroll smoothers such as Mos, remappers such as Karabiner or BetterTouchTool, text expanders) can look like the agent — list them in `~/.perch/config.json` `"ignoreApps"` (app name, bundle id or executable name; relaunch Perch after editing). Without Input Monitoring, desktop actions are off.
 
 ## Troubleshooting
 

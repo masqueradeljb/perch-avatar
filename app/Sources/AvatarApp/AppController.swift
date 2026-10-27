@@ -35,6 +35,9 @@ final class AppController: NSObject, NSApplicationDelegate {
     private let coalescer = ActCoalescer()
     private var ignoreApps: Set<String> = []
     private var actionsItem: NSMenuItem!
+    /// Posted input this recent keeps the character click-through, so it never catches the agent's next click.
+    static let clickThroughAfterPostedInput = 2.0
+    private var lastPostedInputAt = -Double.infinity
 
     enum FollowMode: String { case focus, agent }
     private var mode: FollowMode = .focus
@@ -107,9 +110,10 @@ final class AppController: NSObject, NSApplicationDelegate {
     private func tick() {
         let m = NSEvent.mouseLocation
         let primaryHeight = NSScreen.screens.first?.frame.height ?? 0
-        stage.setInteractive(stage.hitTest((x: Double(m.x), y: Double(primaryHeight - m.y))))
-        guard !traveling else { return }
         let t = now
+        stage.setInteractive(t - lastPostedInputAt > Self.clickThroughAfterPostedInput && !director.isActing(at: t)
+                             && stage.hitTest((x: Double(m.x), y: Double(primaryHeight - m.y))))
+        guard !traveling else { return }
         let d = resolveText(director.directive(at: t), at: t)
         guard let (name, placement, window) = place(d) else {
             stage.hide()
@@ -166,8 +170,9 @@ final class AppController: NSObject, NSApplicationDelegate {
     private func place(_ d: Directive) -> (String, Placement, (pid: pid_t, rect: Rect, number: Int)?)? {
         if case let .rect(r)? = d.target {
             let head = library.resolve(d.pose)
-            let usable = WindowProbe.screenRects(containing: r).usable
-            if let picked = Placer.pickPointing(r, candidates: library.pointCandidates(head), usable: usable,
+            // The full display, not just the usable area, so menu-bar and Dock items can be pointed at.
+            let display = WindowProbe.screenRects(containing: r).frame
+            if let picked = Placer.pickPointing(r, candidates: library.pointCandidates(head), usable: display,
                                                 near: stage.characterFrame) {
                 return (picked.name, picked.placement, nil)
             }
@@ -289,9 +294,12 @@ final class AppController: NSObject, NSApplicationDelegate {
     /// Posted input counts as the agent's only while it is busy, and never from an ignored app.
     private func received(_ event: InputEvent, from pid: pid_t) {
         let t = now
+        lastPostedInputAt = t
         guard director.isBusy(at: t) else { return }
-        if let name = NSRunningApplication(processIdentifier: pid)?.localizedName?.lowercased(),
-           ignoreApps.contains(name) { return }
+        if let app = NSRunningApplication(processIdentifier: pid) {
+            let names = [app.localizedName, app.bundleIdentifier, app.executableURL?.lastPathComponent]
+            if names.contains(where: { $0.map { ignoreApps.contains($0.lowercased()) } ?? false }) { return }
+        }
         if let act = coalescer.feed(event, at: t) { perform(act) }
     }
 

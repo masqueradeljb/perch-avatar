@@ -7,9 +7,18 @@ import AvatarCore
 final class InputWatcher {
     private let handler: (InputEvent, pid_t) -> Void
     private var tap: CFMachPort?
+    private var source: CFRunLoopSource?
 
     init(handler: @escaping (InputEvent, pid_t) -> Void) {
         self.handler = handler
+    }
+
+    deinit {
+        if let tap {
+            CGEvent.tapEnable(tap: tap, enable: false)
+            if let source { CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes) }
+            CFMachPortInvalidate(tap)
+        }
     }
 
     static var hasPermission: Bool { CGPreflightListenEventAccess() }
@@ -29,7 +38,9 @@ final class InputWatcher {
             return Unmanaged.passUnretained(event)
         }, userInfo: me) else { return false }
         self.tap = tap
-        CFRunLoopAddSource(CFRunLoopGetMain(), CFMachPortCreateRunLoopSource(nil, tap, 0), .commonModes)
+        let source = CFMachPortCreateRunLoopSource(nil, tap, 0)
+        self.source = source
+        CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
         CGEvent.tapEnable(tap: tap, enable: true)
         return true
     }
@@ -46,7 +57,10 @@ final class InputWatcher {
         case .leftMouseDown:
             handler(.click(x: p.x, y: p.y), pid)
         case .scrollWheel:
-            handler(.scroll(x: p.x, y: p.y, dy: Double(event.getIntegerValueField(.scrollWheelEventDeltaAxis1))), pid)
+            // Line delta is 0 for pixel-unit (continuous) scrolls; fall back to the point delta.
+            var dy = event.getIntegerValueField(.scrollWheelEventDeltaAxis1)
+            if dy == 0 { dy = event.getIntegerValueField(.scrollWheelEventPointDeltaAxis1) }
+            handler(.scroll(x: p.x, y: p.y, dy: Double(dy)), pid)
         case .keyDown:
             handler(.key, pid)
         default:
