@@ -3,8 +3,8 @@ import AvatarCore
 import ServiceManagement
 
 /// Runs the Director against socket requests and renders its directive on the target window at 60 Hz.
-final class AppController: NSObject, NSApplicationDelegate {
-    private let packDir: URL
+final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
+    private var packDir: URL
     private let pointsPerPixel: Double
     private var library: PoseLibrary!
     private var stage: Stage!
@@ -36,6 +36,12 @@ final class AppController: NSObject, NSApplicationDelegate {
     private var ignoreApps: Set<String> = []
     private var browserTopInset = Viewport.defaultTopInset
     private var actionsItem: NSMenuItem!
+    /// Settings ▸ Character; rebuilt each time it opens so newly dropped packs appear.
+    private var characterMenu: NSMenu!
+    /// Top-level Auto plus the Position submenu items; kept in sync by `pickEdge`.
+    private var edgeItems: [NSMenuItem] = []
+    private let perchHome = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".perch")
+    private var bundledPack: URL? { Bundle.main.resourceURL?.appendingPathComponent("packs/\(PackResolver.bundledId)") }
     /// Posted input this recent keeps the character click-through, so it never catches the agent's next click.
     static let clickThroughAfterPostedInput = 2.0
     private var lastPostedInputAt = -Double.infinity
@@ -80,7 +86,6 @@ final class AppController: NSObject, NSApplicationDelegate {
             fputs("Perch: socket disabled: \(error)\n", stderr)
         }
         setUpMenu()
-        let perchHome = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".perch")
         ignoreApps = PerchConfig.ignoreApps(home: perchHome)
         browserTopInset = PerchConfig.browserTopInset(home: perchHome) ?? Viewport.defaultTopInset
         startWatcher()
@@ -350,48 +355,141 @@ final class AppController: NSObject, NSApplicationDelegate {
             return item
         }
         rebuildModeItems()
+        menu.addItem(edgeItem(title: "Auto", tag: -1))
         menu.addItem(.separator())
-        let simulate = NSMenu()
+
+        let settings = NSMenu()
+        characterMenu = NSMenu()
+        characterMenu.delegate = self
+        rebuildCharacterMenu()
+        settings.addItem(submenuItem("Character", characterMenu))
+
+        let position = NSMenu()
+        position.addItem(edgeItem(title: "Auto", tag: -1))
+        for (index, edge) in Edge.allCases.enumerated() where edge != .pointing {
+            position.addItem(edgeItem(title: Self.edgeTitle(edge), tag: index))
+        }
+        settings.addItem(submenuItem("Position", position))
+        syncEdgeItems()
+
+        actionsItem = NSMenuItem(title: "Desktop actions", action: nil, keyEquivalent: "")
+        actionsItem.target = self
+        settings.addItem(actionsItem)
+        let login = NSMenuItem(title: "Launch at login", action: #selector(toggleLogin(_:)), keyEquivalent: "")
+        login.target = self
+        login.state = SMAppService.mainApp.status == .enabled ? .on : .off
+        settings.addItem(login)
+
+        let debug = NSMenu()
         for state in AgentState.allCases {
             let item = NSMenuItem(title: state.rawValue, action: #selector(simulate(_:)), keyEquivalent: "")
             item.representedObject = state.rawValue
             item.target = self
-            simulate.addItem(item)
+            debug.addItem(item)
         }
         let say = NSMenuItem(title: "say hello", action: #selector(simulateSay), keyEquivalent: "")
         say.target = self
-        simulate.addItem(say)
+        debug.addItem(say)
         for (title, action) in [("click (focused window)", ActAction.click), ("scroll down (focused window)", .scroll)] {
             let item = NSMenuItem(title: title, action: #selector(simulateAct(_:)), keyEquivalent: "")
             item.representedObject = action.rawValue
             item.target = self
-            simulate.addItem(item)
+            debug.addItem(item)
         }
-        let simulateItem = NSMenuItem(title: "Simulate", action: nil, keyEquivalent: "")
-        simulateItem.submenu = simulate
-        menu.addItem(simulateItem)
-        actionsItem = NSMenuItem(title: "Desktop actions", action: nil, keyEquivalent: "")
-        actionsItem.target = self
-        menu.addItem(actionsItem)
+        settings.addItem(submenuItem("Debug", debug))
+        menu.addItem(submenuItem("Settings", settings))
         menu.addItem(.separator())
-        let auto = NSMenuItem(title: "Auto", action: #selector(pickEdge(_:)), keyEquivalent: "")
-        auto.tag = -1
-        auto.target = self
-        auto.state = .on
-        menu.addItem(auto)
-        for (index, edge) in Edge.allCases.enumerated() where edge != .pointing {
-            let item = NSMenuItem(title: "Force \(edge.rawValue)", action: #selector(pickEdge(_:)), keyEquivalent: "")
-            item.tag = index
-            item.target = self
-            menu.addItem(item)
-        }
-        menu.addItem(.separator())
-        let login = NSMenuItem(title: "Launch at login", action: #selector(toggleLogin(_:)), keyEquivalent: "")
-        login.target = self
-        login.state = SMAppService.mainApp.status == .enabled ? .on : .off
-        menu.addItem(login)
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem.menu = menu
+    }
+
+    private func submenuItem(_ title: String, _ submenu: NSMenu) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+        item.submenu = submenu
+        return item
+    }
+
+    private func edgeItem(title: String, tag: Int) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: #selector(pickEdge(_:)), keyEquivalent: "")
+        item.tag = tag
+        item.target = self
+        edgeItems.append(item)
+        return item
+    }
+
+    static func edgeTitle(_ edge: Edge) -> String {
+        switch edge {
+        case .top: return "Top"
+        case .cornerLeft: return "Corner left"
+        case .cornerRight: return "Corner right"
+        case .side: return "Side"
+        case .floor: return "Floor"
+        case .inset: return "Inset"
+        case .pointing: return "Pointing"
+        }
+    }
+
+    private func syncEdgeItems() {
+        let tag = forced.flatMap { Edge.allCases.firstIndex(of: $0) } ?? -1
+        for item in edgeItems { item.state = item.tag == tag ? .on : .off }
+    }
+
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        if menu === characterMenu { rebuildCharacterMenu() }
+    }
+
+    private func rebuildCharacterMenu() {
+        characterMenu.removeAllItems()
+        let current = packDir.standardizedFileURL.path
+        for info in PackResolver.available(home: perchHome, bundled: bundledPack) {
+            let item = NSMenuItem(title: info.name, action: #selector(pickPack(_:)), keyEquivalent: "")
+            item.representedObject = info
+            item.target = self
+            item.state = info.dir.standardizedFileURL.path == current ? .on : .off
+            characterMenu.addItem(item)
+        }
+        characterMenu.addItem(.separator())
+        let open = NSMenuItem(title: "Open Packs Folder…", action: #selector(openPacksFolder), keyEquivalent: "")
+        open.target = self
+        characterMenu.addItem(open)
+    }
+
+    @objc private func pickPack(_ sender: NSMenuItem) {
+        if let info = sender.representedObject as? PackInfo { switchPack(to: info) }
+    }
+
+    /// Loads `info`'s pack and swaps it in live; on failure the current pack stays.
+    /// Nothing else caches per-pack data: each tick asks `library` for images, boxes, run pose and faces.
+    func switchPack(to info: PackInfo) {
+        let loaded: PoseLibrary
+        do {
+            loaded = try PoseLibrary(dir: info.dir, pointsPerPixel: pointsPerPixel)
+        } catch {
+            let alert = NSAlert()
+            alert.messageText = "Can't load \(info.name)"
+            alert.informativeText = "\(error.localizedDescription)\n\n\(info.dir.path)"
+            alert.runModal()
+            return
+        }
+        library = loaded
+        packDir = info.dir
+        do {
+            try PackResolver.select(info.id, home: perchHome)
+        } catch {
+            fputs("Perch: could not save pack choice: \(error)\n", stderr)
+        }
+        rebuildCharacterMenu()
+        simulateSay()
+    }
+
+    @objc private func openPacksFolder() {
+        let dir = perchHome.appendingPathComponent("packs")
+        do {
+            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        } catch {
+            fputs("Perch: cannot create \(dir.path): \(error)\n", stderr)
+        }
+        NSWorkspace.shared.open(dir)
     }
 
     @objc private func toggleLogin(_ sender: NSMenuItem) {
@@ -450,8 +548,6 @@ final class AppController: NSObject, NSApplicationDelegate {
 
     @objc private func pickEdge(_ sender: NSMenuItem) {
         forced = sender.tag < 0 ? nil : Edge.allCases[sender.tag]
-        for item in sender.menu?.items ?? [] where item.action == #selector(pickEdge(_:)) {
-            item.state = item === sender ? .on : .off
-        }
+        syncEdgeItems()
     }
 }

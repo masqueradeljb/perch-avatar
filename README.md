@@ -24,7 +24,7 @@ Using Claude Code only? You can install the plugin instead (see [Claude Code plu
 ## What it does
 
 - **Perches on the agent's window.** Kuro lies on the top edge, sits in a corner, or peeks from the side of the window, and follows it when you move or resize it.
-- **Two follow modes.** *Follow focused window* (default): she sits on whatever window you are using. *Follow agent window*: she stays on the agent's window (the terminal or app the agent runs in, or the app it says it is working in). **Double-click** Kuro to toggle between the two; **right-click** her for a menu with both modes and Quit. The 🐾 menu-bar item has the same modes plus Simulate, forced edges, and Launch at login.
+- **Two follow modes.** *Follow focused window* (default): she sits on whatever window you are using. *Follow agent window*: she stays on the agent's window (the terminal or app the agent runs in, or the app it says it is working in). **Double-click** Kuro to toggle between the two; **right-click** her for a menu with both modes and Quit. The 🐾 menu-bar item has the same two modes and **Auto** (position chosen automatically), plus **Settings ▸**: *Character* (switch packs live; *Open Packs Folder…* opens `~/.perch/packs`), *Position* (Auto or force Top / Corner left / Corner right / Side / Floor / Inset), *Desktop actions*, *Launch at login*, and *Debug* (simulate states, a greeting, a click or a scroll).
 - **Acts out each tool call** (Claude Code hooks):
 
   | Agent does | Activity | Kuro |
@@ -154,7 +154,7 @@ Request types: `state` (`state`, `note?`, `activity?`, `window?`), `show` (same 
 
 ## Packs
 
-A pack is a folder with `pack.json` and transparent PNG poses (12 core poses with anchors such as `edge_top`, `corner`, `floor`, plus optional faces and action poses). Perch loads, in order: `--pack <dir>` → `~/.perch/packs/<id>` selected by `~/.perch/config.json` (`{"pack": "<id>"}`) → the bundled Kuro.
+A pack is a folder with `pack.json` and transparent PNG poses (12 core poses with anchors such as `edge_top`, `corner`, `floor`, plus optional faces and action poses). Perch loads, in order: `--pack <dir>` → `~/.perch/packs/<id>` selected by `~/.perch/config.json` (`{"pack": "<id>"}`) → the bundled Kuro. To add a character, drop its folder into `~/.perch/packs/<id>` and pick it from 🐾 ▸ Settings ▸ Character: it swaps in live and the choice is saved to `config.json` (other keys there are kept).
 
 Optional desktop-action poses: `tap` (2 frames, hotspot at what presses) and `scroll` (2 frames). Missing ones fall back: `tap` → `point`, `scroll` → `tail_swipe` → `work`. A pose may declare `"family": "point"` (or `"tap"`) to be a directional variant; Perch picks the variant whose placement is closest to where the character already is.
 
