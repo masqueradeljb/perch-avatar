@@ -77,10 +77,32 @@ public struct ShowRequest: Codable, Equatable {
     }
 }
 
+public enum ActAction: String, Codable { case click, scroll, type, drag }
+public enum ScrollDir: String, Codable { case up, down }
+
+/// Something the agent just did on screen (computer use), at a point in CG screen points.
+/// `source`: "input" (event tap), "hook", "cli", "menu" — informational.
+public struct ActRequest: Codable, Equatable {
+    public var action: ActAction
+    public var x: Double?
+    public var y: Double?
+    public var dir: ScrollDir?
+    public var source: String?
+
+    public init(action: ActAction, x: Double? = nil, y: Double? = nil, dir: ScrollDir? = nil, source: String? = nil) {
+        self.action = action
+        self.x = x
+        self.y = y
+        self.dir = dir
+        self.source = source
+    }
+}
+
 public enum Request: Equatable {
     /// `activity` (typing|reading|searching|browsing|running) picks an action pose while busy.
     case state(AgentState, note: String? = nil, activity: String? = nil)
     case show(ShowRequest)
+    case act(ActRequest)
     case targets
 }
 
@@ -96,6 +118,8 @@ extension Request: Decodable {
                           activity: try c.decodeIfPresent(String.self, forKey: .activity))
         case "show":
             self = .show(try ShowRequest(from: decoder))
+        case "act":
+            self = .act(try ActRequest(from: decoder))
         case "targets":
             self = .targets
         case let other:

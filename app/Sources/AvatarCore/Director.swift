@@ -61,6 +61,8 @@ public final class Director {
         case let .show(r):
             show = (r, now + (r.holdS ?? config.defaultHold))
             lastEventAt = now
+        case .act:
+            break
         case .targets:
             break
         }
